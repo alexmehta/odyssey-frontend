@@ -1,15 +1,16 @@
 import React, { Component, createContext, useState } from "react";
-
 function AddPano({ addPano }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState("");
   const [fileSize, setFileSize] = useState(true);
+  const [image,setImage]= useState(null)
   // for file upload progress message
   const [fileUploadProgress, setFileUploadProgress] = useState(false);
   //for displaying response message
   const [fileUploadResponse, setFileUploadResponse] = useState(null);
   //base end point url
+  const FILE_RETRIVE_ENDPOINT = "http://localhost:8019/get/content/" 
   const FILE_UPLOAD_BASE_ENDPOINT = "http://localhost:8019/insert/";
   const [tour,setTour] = useState(null)
   const [show,setShow] = useState(true)
@@ -34,7 +35,6 @@ function AddPano({ addPano }) {
       formData.append("files", files[i]);
     }
 
-    console.log("got here");
     const requestOptions = {
       method: "POST",
       body: formData,
@@ -50,22 +50,19 @@ function AddPano({ addPano }) {
         if (!response.ok) {
           // get error message
           const error = (data && data.message) || response.status;
-          setFileUploadResponse(data.message);
           return Promise.reject(error);
         }
         
-        console.log(data);
-        setTour(tour)
         setShow(false)
+        setTour(data)
         
-        setFileUploadResponse(data.message);
       })
       .catch((error) => {
-        console.error("Error while uploading file!", error);
+        console.error("Error Retriving File", error);
       });
       
+
     setFileUploadProgress(false);
-    console.log(nullTour())
   };
 
   const form = (
@@ -92,15 +89,31 @@ function AddPano({ addPano }) {
       )}
     </form>
   );
-    const editPanoDetails = (
-            <h1>Edit Tour Images</h1>
+  
+  const panoList = (<p>
+    {listPanos(tour)}
+  </p>)
+            
+    function listPanos(tour){
+      if(!nullTour()){
 
-    )
+        
+      console.log(tour)
+      return tour.panoramaFrames.map((pano=>(<li>
+        <p>#{pano.id}</p>
+        <img src={FILE_RETRIVE_ENDPOINT + pano.contentID}></img>
+              </li>)));
+      }
+      else return "";
+    }
+
   function nullTour(){
       return tour === null;
   }
+
+  
  return (<>{show&& form }
-        {!show && editPanoDetails}
+        {!show && panoList}
  
  </>);
 }
