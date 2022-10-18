@@ -1,14 +1,66 @@
-import React, { Component, createContext, useState } from "react";
+import React, { Component, createContext, useState, useSyncExternalStore , useRef} from "react";
+import { Pannellum, PannellumVideo} from "pannellum-react";
 function AddPano({ addPano }) {
+var config = {
+    hfov: 100,
+    minHfov: 50,
+    multiResMinHfov: false,
+    maxHfov: 120,
+    pitch: 0,
+    minPitch: undefined,
+    maxPitch: undefined,
+    yaw: 0,
+    minYaw: -180,
+    maxYaw: 180,
+    roll: 0,
+    haov: 360,
+    vaov: 180,
+    vOffset: 0,
+    autoRotate: false,
+    autoRotateInactivityDelay: -1,
+    autoRotateStopDelay: undefined,
+    type: 'equirectangular',
+    northOffset: 0,
+    showFullscreenCtrl: true,
+    dynamic: false,
+    dynamicUpdate: false,
+    doubleClickZoom: true,
+    keyboardZoom: true,
+    mouseZoom: true,
+    showZoomCtrl: true,
+    autoLoad: false,
+    showControls: true,
+    orientationOnByDefault: false,
+    hotSpotDebug: false,
+    backgroundColor: [0, 0, 0],
+    avoidShowingBackground: false,
+    draggable: true,
+    dragConfirm: false,
+    disableKeyboardCtrl: false,
+    crossOrigin: 'anonymous',
+    targetBlank: false,
+    touchPanSpeedCoeffFactor: 1,
+    capturedKeyNumbers: [16, 17, 27, 37, 38, 39, 40, 61, 65, 68, 83, 87, 107, 109, 173, 187, 189],
+    friction: 0.15
+};
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState("");
   const [fileSize, setFileSize] = useState(true);
   const [image,setImage]= useState(null)
+  const [hotspotMap,setMap] = useState(new Map());
+  const [posLog,setLog]= useState(new Map());
+    
+  const ref = useRef(null); 
   // for file upload progress message
   const [fileUploadProgress, setFileUploadProgress] = useState(false);
   //for displaying response message
   const [fileUploadResponse, setFileUploadResponse] = useState(null);
+ const createHotspotHandler = (e)=>{
+      e.preventDefault();
+      e = e.target;
+      saveHotspot(e.text.value,e.link.value,posLog.get(e.id.value)[0],posLog.get(e.id.value)[1]);
+    }
   //base end point url
   const FILE_RETRIVE_ENDPOINT = "http://localhost:8019/get/content/" 
   const FILE_UPLOAD_BASE_ENDPOINT = "http://localhost:8019/insert/";
@@ -25,7 +77,7 @@ function AddPano({ addPano }) {
 
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
-      if (files[i].size >200000) {
+      if (files[i].size >20000000000000) {
         setFileSize(false);
         setFileUploadProgress(false);
         setFileUploadResponse(null);
@@ -74,6 +126,7 @@ function AddPano({ addPano }) {
         value={name}
         type="text"
       ></input>
+      <label>Enter Description</label>
       <input
         required
         onChange={(e) => setDescription(e.target.value)}
@@ -89,19 +142,122 @@ function AddPano({ addPano }) {
       )}
     </form>
   );
-  
-  const panoList = (<p>
-    {listPanos(tour)}
-  </p>)
-            
+  function createHotspot(text,link,yaw,pitch){
+    console.log("created")
+      return (
+       <Pannellum.Hotspot
+        type="info"
+        pitch={pitch}
+        yaw={yaw}
+        text={text}
+        URL={link}
+              />
+      )
+
+  }
+  function loadHotspots(link){
+      return hotspotMap.get(link) ||[];
+  }
+  function saveHotspot(link,text,url,x,y){
+   var a  = hotspotMap.get(link) ||[] ;
+    a.push({"link":url,"text":text,"x":x,"y":y});
+    hotspotMap.set(link,a);
+  }
+  const panoList = 
+    listPanos(tour)
+function mousePosition(event) {
+    var pos = {};
+    // pageX / pageY needed for iOS
+    pos.x = (event.clientX || event.pageX)  ;
+    pos.y = (event.clientY || event.pageY);
+    return pos;
+}
+function mouseEventToCoords(event) {
+
+    var pos = mousePosition(event);
+    var canvasWidth = 3000,
+        canvasHeight = 500;
+    var x = pos.x / canvasWidth * 2 - 1;
+    var y = (1 - pos.y / canvasHeight * 2) * canvasHeight / canvasWidth;
+    var focal = 1 / Math.tan(config.hfov * Math.PI / 360);
+    var s = Math.sin(config.pitch * Math.PI / 180);
+    var c = Math.cos(config.pitch * Math.PI / 180);
+    var a = focal * c - y * s;
+    var root = Math.sqrt(x*x + a*a);
+    var pitch = Math.atan((y * c + focal * s) / root) * 180 / Math.PI;
+    var yaw = Math.atan2(x / root, a / root) * 180 / Math.PI + config.yaw;
+    if (yaw < -180)
+        yaw += 360;
+    if (yaw > 180)
+        yaw -= 360;
+    return [pitch, yaw];
+}
+  function getPanellum(link){
+          return (<>
+           <div> 
+    <Pannellum ref={ref}
+        width="1500px"
+        height="500px"
+        image={link}
+        pitch={10}
+        yaw={180}
+        hfov={110}
+        autoLoad
+        onLoad={() => {
+        }}
+        onMousedown={
+          (evt)=>{
+              // console.log("click",evt)
+              var a  = mouseEventToCoords(evt);
+              posLog.set(link,a);
+
+      console.log("map",hotspotMap)
+              console.log("fromhere12" , hotspotMap.get(link));
+          }
+        }
+        
+        >
+          {(hotspotMap.get(link)||[]).map(element => (createHotspot(element.text,element.link,posLog.get(link)[0]||0,posLog.get(link)[1]||0)))}
+
+
+        </Pannellum>
+</div>
+      <div class="panellum-form">{hotspotForm(link)}</div>
+      
+        </>
+        )
+
+      }
+
+     
+    function hotspotForm(link) {
+      return (
+<div>
+        <form onSubmit={createHotspotHandler}>
+
+          <input hidden value={link} name="id"></input>
+          <label>Text</label>
+          <input type="text" name="text" required></input>
+          <label>URL</label>
+          <input type="text" name="link"></input>
+          <input type="submit" value="Create Hotspot"></input>
+
+        </form>
+      </div>
+      )
+
+    }
+   
     function listPanos(tour){
       if(!nullTour()){
 
         
-      console.log(tour)
       return tour.panoramaFrames.map((pano=>(<li>
         <p>#{pano.id}</p>
-        <img src={FILE_RETRIVE_ENDPOINT + pano.contentID}></img>
+        <div>
+          {getPanellum(FILE_RETRIVE_ENDPOINT + pano.contentID)}
+        </div>
+        {/* <img src={FILE_RETRIVE_ENDPOINT + pano.contentID}></img> */}
               </li>)));
       }
       else return "";
