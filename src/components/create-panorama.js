@@ -1,4 +1,4 @@
-import React, { Component, createContext, useState, useSyncExternalStore , useRef} from "react";
+import React, { Component, createContext, useState, useSyncExternalStore , useRef, useReducer} from "react";
 import { Pannellum, PannellumVideo} from "pannellum-react";
 function AddPano({ addPano }) {
 var config = {
@@ -50,7 +50,7 @@ var config = {
   const [image,setImage]= useState(null)
   const [hotspotMap,setMap] = useState(new Map());
   const [posLog,setLog]= useState(new Map());
-    
+  const [,forceUpdate] = useReducer(x=>x+1,0)
   const ref = useRef(null); 
   // for file upload progress message
   const [fileUploadProgress, setFileUploadProgress] = useState(false);
@@ -59,7 +59,8 @@ var config = {
  const createHotspotHandler = (e)=>{
       e.preventDefault();
       e = e.target;
-      saveHotspot(e.text.value,e.link.value,posLog.get(e.id.value)[0],posLog.get(e.id.value)[1]);
+      saveHotspot(e.id.value,e.text.value,e.text.link,posLog.get(e.id.value)[0],posLog.get(e.id.value)[1]);
+      forceUpdate()
     }
   //base end point url
   const FILE_RETRIVE_ENDPOINT = "http://localhost:8019/get/content/" 
@@ -143,7 +144,7 @@ var config = {
     </form>
   );
   function createHotspot(text,link,yaw,pitch){
-    console.log("created")
+
       return (
        <Pannellum.Hotspot
         type="info"
@@ -159,12 +160,11 @@ var config = {
       return hotspotMap.get(link) ||[];
   }
   function saveHotspot(link,text,url,x,y){
-   var a  = hotspotMap.get(link) ||[] ;
+    
+    var a  = hotspotMap.get(link) ||[] ;
     a.push({"link":url,"text":text,"x":x,"y":y});
     hotspotMap.set(link,a);
   }
-  const panoList = 
-    listPanos(tour)
 function mousePosition(event) {
     var pos = {};
     // pageX / pageY needed for iOS
@@ -173,7 +173,6 @@ function mousePosition(event) {
     return pos;
 }
 function mouseEventToCoords(event) {
-
     var pos = mousePosition(event);
     var canvasWidth = 3000,
         canvasHeight = 500;
@@ -210,26 +209,27 @@ function mouseEventToCoords(event) {
               // console.log("click",evt)
               var a  = mouseEventToCoords(evt);
               posLog.set(link,a);
-
-      console.log("map",hotspotMap)
-              console.log("fromhere12" , hotspotMap.get(link));
+              
           }
         }
         
         >
-          {(hotspotMap.get(link)||[]).map(element => (createHotspot(element.text,element.link,posLog.get(link)[0]||0,posLog.get(link)[1]||0)))}
+          {mappings(link)}
 
 
         </Pannellum>
 </div>
-      <div class="panellum-form">{hotspotForm(link)}</div>
+      <div className="panellum-form">{hotspotForm(link)}</div>
       
         </>
         )
 
       }
 
-     
+    function mappings(link){
+      console.log("hotspot", hotspotMap)
+  return ((hotspotMap.get(link))||[]).map(element => (createHotspot(element.text,element.link,posLog.get(link)[0]||0,posLog.get(link)[1]||0)))
+    }
     function hotspotForm(link) {
       return (
 <div>
@@ -251,14 +251,12 @@ function mouseEventToCoords(event) {
     function listPanos(tour){
       if(!nullTour()){
 
-        
+      console.log("Test") 
       return tour.panoramaFrames.map((pano=>(<li>
-        <p>#{pano.id}</p>
         <div>
           {getPanellum(FILE_RETRIVE_ENDPOINT + pano.contentID)}
         </div>
-        {/* <img src={FILE_RETRIVE_ENDPOINT + pano.contentID}></img> */}
-              </li>)));
+      </li>)));
       }
       else return "";
     }
@@ -269,7 +267,7 @@ function mouseEventToCoords(event) {
 
   
  return (<>{show&& form }
-        {!show && panoList}
+        {!show && listPanos(tour)}
  
  </>);
 }
