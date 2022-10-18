@@ -165,40 +165,22 @@ var config = {
     a.push({"link":url,"text":text,"x":x,"y":y});
     hotspotMap.set(link,a);
   }
-function mousePosition(event) {
-    var pos = {};
-    // pageX / pageY needed for iOS
-    pos.x = (event.clientX || event.pageX)  ;
-    pos.y = (event.clientY || event.pageY);
-    return pos;
-}
-function mouseEventToCoords(event) {
-    var pos = mousePosition(event);
-    var canvasWidth = 3000,
-        canvasHeight = 500;
-    var x = pos.x / canvasWidth * 2 - 1;
-    var y = (1 - pos.y / canvasHeight * 2) * canvasHeight / canvasWidth;
-    var focal = 1 / Math.tan(config.hfov * Math.PI / 360);
-    var s = Math.sin(config.pitch * Math.PI / 180);
-    var c = Math.cos(config.pitch * Math.PI / 180);
-    var a = focal * c - y * s;
-    var root = Math.sqrt(x*x + a*a);
-    var pitch = Math.atan((y * c + focal * s) / root) * 180 / Math.PI;
-    var yaw = Math.atan2(x / root, a / root) * 180 / Math.PI + config.yaw;
-    if (yaw < -180)
-        yaw += 360;
-    if (yaw > 180)
-        yaw -= 360;
-    return [pitch, yaw];
-}
+  function getPos(evt){
+    console.log("Evt",evt);
+
+
+    console.log(ref.current.getViewer())
+    return ref.current.getViewer().mouseEventToCoords(evt);
+  }
+
   function getPanellum(link){
           return (<>
-           <div> 
+           <div className="panellum"> 
     <Pannellum ref={ref}
-        width="1500px"
+        width="100%"
         height="500px"
         image={link}
-        pitch={10}
+        pitch={30}
         yaw={180}
         hfov={110}
         autoLoad
@@ -207,8 +189,8 @@ function mouseEventToCoords(event) {
         onMousedown={
           (evt)=>{
               // console.log("click",evt)
-              var a  = mouseEventToCoords(evt);
-              posLog.set(link,a);
+
+              posLog.set(link,getPos(evt));
               
           }
         }
@@ -227,8 +209,8 @@ function mouseEventToCoords(event) {
       }
 
     function mappings(link){
-      console.log("hotspot", hotspotMap)
-  return ((hotspotMap.get(link))||[]).map(element => (createHotspot(element.text,element.link,posLog.get(link)[0]||0,posLog.get(link)[1]||0)))
+      console.log("hotspot", hotspotMap.get(link))
+      return ((hotspotMap.get(link))||[]).map(element => (createHotspot(element.text,element.link,posLog.get(link)[0]||0,posLog.get(link)[1]||0))) 
     }
     function hotspotForm(link) {
       return (
@@ -268,7 +250,6 @@ function mouseEventToCoords(event) {
   
  return (<>{show&& form }
         {!show && listPanos(tour)}
- 
  </>);
 }
 export default AddPano;
