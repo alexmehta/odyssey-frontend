@@ -1,48 +1,6 @@
 import React, { Component, createContext, useState, useSyncExternalStore , useRef, useReducer} from "react";
 import { Pannellum, PannellumVideo} from "pannellum-react";
 function AddPano({ addPano }) {
-var config = {
-    hfov: 100,
-    minHfov: 50,
-    multiResMinHfov: false,
-    maxHfov: 120,
-    pitch: 0,
-    minPitch: undefined,
-    maxPitch: undefined,
-    yaw: 0,
-    minYaw: -180,
-    maxYaw: 180,
-    roll: 0,
-    haov: 360,
-    vaov: 180,
-    vOffset: 0,
-    autoRotate: false,
-    autoRotateInactivityDelay: -1,
-    autoRotateStopDelay: undefined,
-    type: 'equirectangular',
-    northOffset: 0,
-    showFullscreenCtrl: true,
-    dynamic: false,
-    dynamicUpdate: false,
-    doubleClickZoom: true,
-    keyboardZoom: true,
-    mouseZoom: true,
-    showZoomCtrl: true,
-    autoLoad: false,
-    showControls: true,
-    orientationOnByDefault: false,
-    hotSpotDebug: false,
-    backgroundColor: [0, 0, 0],
-    avoidShowingBackground: false,
-    draggable: true,
-    dragConfirm: false,
-    disableKeyboardCtrl: false,
-    crossOrigin: 'anonymous',
-    targetBlank: false,
-    touchPanSpeedCoeffFactor: 1,
-    capturedKeyNumbers: [16, 17, 27, 37, 38, 39, 40, 61, 65, 68, 83, 87, 107, 109, 173, 187, 189],
-    friction: 0.15
-};
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState("");
@@ -60,7 +18,12 @@ var config = {
       e.preventDefault();
       e = e.target;
       saveHotspot(e.id.value,e.text.value,e.text.link,posLog.get(e.id.value)[0],posLog.get(e.id.value)[1]);
-      forceUpdate()
+    }
+    function list(e){
+
+      console.log("what should be inserted", e)
+      return e;
+
     }
   //base end point url
   const FILE_RETRIVE_ENDPOINT = "http://localhost:8019/get/content/" 
@@ -161,9 +124,11 @@ var config = {
   }
   function saveHotspot(link,text,url,x,y){
     
-    var a  = hotspotMap.get(link) ||[] ;
+    var a  = loadHotspots(link);
     a.push({"link":url,"text":text,"x":x,"y":y});
     hotspotMap.set(link,a);
+
+    forceUpdate();
   }
   function getPos(evt){
     console.log("Evt",evt);
@@ -174,9 +139,8 @@ var config = {
   }
 
   function getPanellum(link){
-          return (<>
-           <div className="panellum"> 
-    <Pannellum ref={ref}
+    const panel =(
+      <Pannellum  ref={ref}
         width="100%"
         height="500px"
         image={link}
@@ -184,8 +148,7 @@ var config = {
         yaw={180}
         hfov={110}
         autoLoad
-        onLoad={() => {
-        }}
+
         onMousedown={
           (evt)=>{
               // console.log("click",evt)
@@ -193,24 +156,28 @@ var config = {
               posLog.set(link,getPos(evt));
               
           }
-        }
-        
-        >
-          {mappings(link)}
+        }>
 
+        {list(mappings(link))}
+</Pannellum>
 
-        </Pannellum>
-</div>
-      <div className="panellum-form">{hotspotForm(link)}</div>
+    ); 
+    console.log("panel",panel);
+          return (
+            <>
+           {panel} 
+            <div className="panellum-form">{hotspotForm(link)}</div>
+            </>
       
-        </>
-        )
+        );
 
       }
 
     function mappings(link){
       console.log("hotspot", hotspotMap.get(link))
-      return ((hotspotMap.get(link))||[]).map(element => (createHotspot(element.text,element.link,posLog.get(link)[0]||0,posLog.get(link)[1]||0))) 
+      const b = ((loadHotspots(link)).flatMap(element => (createHotspot(element.text,element.link,element.y||0,element.x||0))));
+      console.log("hotspots array",b);
+      return b;
     }
     function hotspotForm(link) {
       return (
@@ -246,6 +213,7 @@ var config = {
   function nullTour(){
       return tour === null;
   }
+  
 
   
  return (<>{show&& form }
