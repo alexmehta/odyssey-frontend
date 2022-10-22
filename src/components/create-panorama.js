@@ -9,6 +9,7 @@ function AddPano({ addPano }) {
   const [hotspotMap,setMap] = useState(new Map());
   const [posLog,setLog]= useState(new Map());
   const [,forceUpdate] = useReducer(x=>x+1,0)
+  const [hotType, setType] = useState("info");
   const ref = useRef(null); 
   // for file upload progress message
   const [fileUploadProgress, setFileUploadProgress] = useState(false);
@@ -110,7 +111,7 @@ function AddPano({ addPano }) {
 
       return (
        <Pannellum.Hotspot
-        type="info"
+        type={hotType}
         pitch={pitch}
         yaw={yaw}
         text={text}
@@ -138,7 +139,7 @@ function AddPano({ addPano }) {
     return ref.current.getViewer().mouseEventToCoords(evt);
   }
 
-  function getPanellum(link){
+  function getPanellum(link,contentID){
     const panel =(
       <Pannellum  ref={ref}
         width="100%"
@@ -166,31 +167,48 @@ function AddPano({ addPano }) {
           return (
             <>
            {panel} 
-            <div className="panellum-form">{hotspotForm(link)}</div>
+            <div className="panellum-form">{hotspotForm(link,contentID)}</div>
             </>
       
         );
 
       }
-
+   
     function mappings(link){
       console.log("hotspot", hotspotMap.get(link))
       const b = ((loadHotspots(link)).flatMap(element => (createHotspot(element.text,element.link,element.y||0,element.x||0))));
       console.log("hotspots array",b);
       return b;
     }
-    function hotspotForm(link) {
+    function getType(){
+      console.log(hotType);
+      return hotType;
+    }
+    function hotspotForm(link,contentID) {
       return (
 <div>
         <form onSubmit={createHotspotHandler}>
 
           <input hidden value={link} name="id"></input>
-          <label>Text</label>
-          <input type="text" name="text" required></input>
-          <label>URL</label>
-          <input type="text" name="link"></input>
-          <input type="submit" value="Create Hotspot"></input>
+          <label>{!(getType()=="info") ? "Transition Image":"Name"}</label>
+          <input hidden={!(getType()=="info") ? true:false} type="text" name="text" required></input>
+          <select hidden={(getType()=="info") ? true:false}>
+            {tour.panoramaFrames.flatMap((pano)=>pano.contentID!=contentID ? <option>{pano.contentID}</option> : "")}
 
+          </select>
+          <label hidden={!(getType()=="info") ? true:false}>URL</label>
+          <input hidden={!(getType()=="info") ? true:false}type="text" name="link"></input>
+          <div onChange={event=>setType(event.target.value)}>
+          <fieldset>
+            <legend>Select Hotspot Type</legend>
+            <label>Info</label>
+            <input type="radio" name="type" value="info"/>
+            <label>Transition</label>
+            <input type="radio" name="type" value="custom"/>
+          </fieldset>
+          </div>    
+
+            <input type="submit" value="Create Hotspot"></input>
         </form>
       </div>
       )
@@ -203,7 +221,8 @@ function AddPano({ addPano }) {
       console.log("Test") 
       return tour.panoramaFrames.map((pano=>(<li>
         <div>
-          {getPanellum(FILE_RETRIVE_ENDPOINT + pano.contentID)}
+          <h1>{pano.contentID}</h1>
+          {getPanellum(FILE_RETRIVE_ENDPOINT + pano.contentID,pano.contentID)}
         </div>
       </li>)));
       }
