@@ -1,12 +1,10 @@
 import React, {
-  Component,
-  createContext,
   useState,
-  useSyncExternalStore,
   useRef,
   useReducer,
 } from "react";
 import { Pannellum, PannellumVideo } from "pannellum-react";
+import { serialize } from "react-serialize/lib";
 function AddPano({ addPano }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -107,7 +105,7 @@ function AddPano({ addPano }) {
         value={description}
         type="text"
       ></input>
-      <input type="file" multiple onChange={uploadFileHandler} />
+      <input type="file"accept=".jpg,.jpeg,.gif,.png,.heic" multiple onChange={uploadFileHandler} />
       <button type="submit">Upload</button>
       {!fileSize && <p style={{ color: "red" }}>File size exceeded!!</p>}
       {fileUploadProgress && <p style={{ color: "red" }}>Uploading File(s)</p>}
@@ -227,11 +225,17 @@ function AddPano({ addPano }) {
       </div>
     );
   }
-
+  function saveTour(){
+     const json = serialize(listPanos(tour)); 
+     console.log(json);
+     const link = giveTour(json);
+  }
+  const save = (<form onSubmit={saveTour}>
+          <input type="submit" value="Save"></input>
+      </form>)
   function listPanos(tour) {
     if (!nullTour()) {
-      console.log("Test");
-      return tour.panoramaFrames.map((pano) => (
+      return (tour.panoramaFrames.map((pano) => (
         <li>
           <div>
             <h1>{pano.contentID}</h1>
@@ -241,7 +245,12 @@ function AddPano({ addPano }) {
             )}
           </div>
         </li>
-      ));
+
+      )
+      
+      )
+      
+      );
     } else return "";
   }
 
@@ -252,7 +261,8 @@ function AddPano({ addPano }) {
   return (
     <>
       {show && form}
-      {!show && listPanos(tour)}
+      {!show && listPanos(tour) }
+      {!show && save}
     </>
   );
 }
