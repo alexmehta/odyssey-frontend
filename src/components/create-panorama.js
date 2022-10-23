@@ -5,10 +5,12 @@ import React, {
 } from "react";
 import { Pannellum} from "pannellum-react";
 import { serialize } from "react-serialize/lib";
+import {useNavigate} from "react-router-dom";
 function AddPano({ addPano }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState("");
+  const navigate = useNavigate();
   const [fileSize, setFileSize] = useState(true);
   const [image, setImage] = useState(null);
   const [hotspotMap, setMap] = useState(new Map());
@@ -32,7 +34,6 @@ function AddPano({ addPano }) {
     );
   };
   function list(e) {
-    console.log("what should be inserted", e);
     return e;
   }
   //base end point url
@@ -137,9 +138,6 @@ function AddPano({ addPano }) {
     forceUpdate();
   }
   function getPos(evt) {
-    console.log("Evt", evt);
-
-    console.log(ref.current.getViewer());
     return ref.current.getViewer().mouseEventToCoords(evt);
   }
 
@@ -155,7 +153,6 @@ function AddPano({ addPano }) {
         hfov={110}
         autoLoad
         onMousedown={(evt) => {
-          // console.log("click",evt)
 
           posLog.set(link, getPos(evt));
         }}
@@ -163,7 +160,6 @@ function AddPano({ addPano }) {
         {list(mappings(link))}
       </Pannellum>
     );
-    console.log("panel", panel);
     return (
       <>
         {panel}
@@ -173,15 +169,12 @@ function AddPano({ addPano }) {
   }
 
   function mappings(link) {
-    console.log("hotspot", hotspotMap.get(link));
     const b = loadHotspots(link).flatMap((element) =>
       createHotspot(element.text, element.link, element.y || 0, element.x || 0)
     );
-    console.log("hotspots array", b);
     return b;
   }
   function getType() {
-    console.log(hotType);
     return hotType;
   }
   function hotspotForm(link, contentID) {
@@ -233,23 +226,42 @@ function AddPano({ addPano }) {
         body : json
       }
       fetch(FILE_SEND+name ,requestOptions).then(async (response) => 
-        console.log("response",response)
+        console.log()
       )
       .catch((error) => {
         console.error(error);
       });
+      return name;
 
   };
 
 
-      
+    function createObject(name,description,frames,hotspotMap){
+     for (let index = 0; index < frames.length; index++) {
+      const element = frames[index];
+      element.hotspots = hotspotMap.get(FILE_RETRIVE_ENDPOINT + element.contentID);
+      frames[index] = element;
+     } 
+     frames.name = name;
+     frames.description = description;
+     return frames;
+    } 
   
   function saveTour(){
-     const json = serialize(listPanos(tour)); 
-     console.log(json);
-     const link = giveTour(name,json);
-
-  }
+  //   var seen = [];
+  //    const json =JSON.stringify( listPanos(tour),function(key, val) {
+  //  if (val != null && typeof val == "object") {
+  //       if (seen.indexOf(val) >= 0) {
+  //           return;
+  //       }
+  //       seen.push(val);
+  //   }
+    console.log(tour.panoramaFrames);
+    const serialized = createObject(tour.name,tour.description,tour.panoramaFrames,hotspotMap);
+    const link = giveTour(name,serialized)
+    console.log(serialized)
+    navigate('/show' ,{state:{data:serialized}})
+} 
   const save = (<form onSubmit={saveTour}>
           <input type="submit" value="Save"></input>
       </form>)
