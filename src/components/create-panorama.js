@@ -3,7 +3,7 @@ import React, {
   useRef,
   useReducer,
 } from "react";
-import { Pannellum, PannellumVideo } from "pannellum-react";
+import { Pannellum} from "pannellum-react";
 import { serialize } from "react-serialize/lib";
 function AddPano({ addPano }) {
   const [name, setName] = useState("");
@@ -38,6 +38,7 @@ function AddPano({ addPano }) {
   //base end point url
   const FILE_RETRIVE_ENDPOINT = "http://localhost:8019/get/content/";
   const FILE_UPLOAD_BASE_ENDPOINT = "http://localhost:8019/insert/";
+  const FILE_SEND = "http://localhost:8019/process_tour/"
   const [tour, setTour] = useState(null);
   const [show, setShow] = useState(true);
   const uploadFileHandler = (event) => {
@@ -225,10 +226,29 @@ function AddPano({ addPano }) {
       </div>
     );
   }
+
+  function giveTour(name,json){
+      const requestOptions = {
+        method: "POST",
+        body : json
+      }
+      fetch(FILE_SEND+name ,requestOptions).then(async (response) => 
+        console.log("response",response)
+      )
+      .catch((error) => {
+        console.error(error);
+      });
+
+  };
+
+
+      
+  
   function saveTour(){
      const json = serialize(listPanos(tour)); 
      console.log(json);
-     const link = giveTour(json);
+     const link = giveTour(name,json);
+
   }
   const save = (<form onSubmit={saveTour}>
           <input type="submit" value="Save"></input>
