@@ -4,7 +4,6 @@ import React, {
   useReducer,
 } from "react";
 import { Pannellum} from "pannellum-react";
-import { serialize } from "react-serialize/lib";
 import {useNavigate} from "react-router-dom";
 function AddPano({ addPano }) {
   const [name, setName] = useState("");
@@ -22,17 +21,38 @@ function AddPano({ addPano }) {
   const [fileUploadProgress, setFileUploadProgress] = useState(false);
   //for displaying response message
   const [fileUploadResponse, setFileUploadResponse] = useState(null);
+  function saveTransition(id,link,trans,x,y){
+    var a = loadHotspots(id);
+    a.push({ type:"transition" ,link: link, tran: trans, x: x, y: y });
+    hotspotMap.set(id, a);
+    console.log("saved")
+    forceUpdate();
+
+  }
   const createHotspotHandler = (e) => {
     e.preventDefault();
     e = e.target;
-    saveHotspot(
+
+    console.log(hotType!="custom");
+    if(hotType!="custom"){
+      saveHotspot(
       e.id.value,
       e.text.value,
       e.text.link,
       posLog.get(e.id.value)[0],
       posLog.get(e.id.value)[1]
     );
-  };
+    }else{
+      console.log('e',e)
+     saveTransition(
+      e.id.value,
+      e.text.link,
+      e.trans.value,
+      posLog.get(e.id.value)[0],
+      posLog.get(e.id.value)[1]
+    );
+    }
+      };
   function list(e) {
     return e;
   }
@@ -132,7 +152,7 @@ function AddPano({ addPano }) {
   }
   function saveHotspot(link, text, url, x, y) {
     var a = loadHotspots(link);
-    a.push({ link: url, text: text, x: x, y: y });
+    a.push({type:"info" ,link: url, text: text, x: x, y: y });
     hotspotMap.set(link, a);
 
     forceUpdate();
@@ -167,7 +187,12 @@ function AddPano({ addPano }) {
       </>
     );
   }
-
+  function setT(t){
+    console.log(t);
+    console.log(hotType!="custom")
+    setType(t);
+      
+  }
   function mappings(link) {
     const b = loadHotspots(link).flatMap((element) =>
       createHotspot(element.text, element.link, element.y || 0, element.x || 0)
@@ -189,7 +214,7 @@ function AddPano({ addPano }) {
             name="text"
             required
           ></input>
-          <select hidden={getType() == "info" ? true : false}>
+          <select name="trans" hidden={getType() == "info" ? true : false}>
             {tour.panoramaFrames.flatMap((pano) =>
               pano.contentID != contentID ? (
                 <option>{pano.contentID}</option>
@@ -204,7 +229,7 @@ function AddPano({ addPano }) {
             type="text"
             name="link"
           ></input>
-          <div onChange={(event) => setType(event.target.value)}>
+          <div onChange={(event) => setT(event.target.value)}>
             <fieldset>
               <legend>Select Hotspot Type</legend>
               <label>Info</label>
@@ -219,7 +244,7 @@ function AddPano({ addPano }) {
       </div>
     );
   }
-
+  
   function giveTour(name,json){
       const requestOptions = {
         method: "POST",
@@ -258,6 +283,7 @@ function AddPano({ addPano }) {
   //   }
     console.log(tour.panoramaFrames);
     const serialized = createObject(tour.name,tour.description,tour.panoramaFrames,hotspotMap);
+    console.log("map",hotspotMap);
     const link = giveTour(name,serialized)
     console.log(serialized)
     navigate('/show' ,{state:{data:serialized}})
