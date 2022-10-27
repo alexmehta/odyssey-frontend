@@ -3,8 +3,11 @@ import React, {
   useRef,
   useReducer,
 } from "react";
+import '../App.css'
 import { Pannellum} from "pannellum-react";
 import {useNavigate} from "react-router-dom";
+
+import 'bootstrap/dist/css/bootstrap.min.css'
 function AddPano({ addPano }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -113,29 +116,40 @@ function AddPano({ addPano }) {
   };
 
   const form = (
+    <div className="form-signin">
     <form encType="multipart/form-data" onSubmit={fileSubmitHandler}>
-      <label>Enter Name</label>
-      <input
-        required
-        onChange={(e) => setName(e.target.value)}
-        value={name}
-        type="text"
-      ></input>
-      <label>Enter Description</label>
-      <input
+      <div className="form-group">
+        <label>Enter Tour Name</label>
+        <input 
+          required
+          onChange={(e) => setName(e.target.value)}
+          value={name}
+          type="text"
+          className="form-control"
+        ></input>
+        <small className="form-text text-muted">Enter a name for the tour (this is unique to your tour)</small>
+      </div>
+      <div className="form-group"><label>Enter Tour Description</label>
+      <input className="form-control"
         required
         onChange={(e) => setDescription(e.target.value)}
         value={description}
         type="text"
       ></input>
-      <input type="file"accept=".jpg,.jpeg,.gif,.png,.heic" multiple onChange={uploadFileHandler} />
-      <button type="submit">Upload</button>
+</div>
+<div className="form-group">
+            <label for="upload" >Upload Panoramas Here</label>
+            <input id="upload" className="form-control-file" type="file"accept=".jpg,.jpeg,.gif,.png,.heic" multiple onChange={uploadFileHandler} />
+</div>
+<br/>
+      <button className="btn btn-lg btn-primary" type="submit">Create Tour</button>
       {!fileSize && <p style={{ color: "red" }}>File size exceeded!!</p>}
       {fileUploadProgress && <p style={{ color: "red" }}>Uploading File(s)</p>}
       {fileUploadResponse != null && (
         <p style={{ color: "green" }}>{fileUploadResponse}</p>
       )}
     </form>
+</div>
   );
   function createHotspot(text, link, yaw, pitch) {
     return (
