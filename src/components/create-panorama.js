@@ -44,6 +44,7 @@ function AddPano({ addPano }) {
     );
     }else{
       console.log('e',e)
+      console.log("creating")
      saveTransition(
       e.id.value,
       e.text.link,

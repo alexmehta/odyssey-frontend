@@ -7,19 +7,31 @@ function View({ View }) {
   console.log("states", state);
   const data = state.data;
   const [main,setMain] = useState(data[0]);
+  const [k
+   ,setK] = useState(3);
+  const FILE_RETRIVE_ENDPOINT = "http://localhost:8019/get/content/";
+  console.log("main",main)
   const disMain = getPanellum(
     main.type,
     FILE_RETRIVE_ENDPOINT + main.contentID,
     main.contentID,
     main.hotspots
   );
-  function handleTransition(evt,name){
-    console.log("evt",evt);
-    console.log("name",name);
-    setMain(name); //TODO make this show the right thing
+  function get(name){
+    console.log("name",name)
+    for (let index = 0; index < data.length; index++) {
+      const element = data[index];
+      if(element.contentID == name) {
+        console.log("d",data[index])
+        return index;
+      }
+    }
+    return 0;
   }
   function processTransition(item)
   {
+    const name = item.tran;
+    console.log("names",name)
    return (
       <Pannellum.Hotspot
         type="custom"
@@ -28,8 +40,8 @@ function View({ View }) {
         text={item.text}
         URL={item.link}
         name={item.tran}
-        handleClick={(evt,name)=>handleTransition(evt,name)}
-        clickHandlerArg={{name:item.tran}
+        handleClick={(evt,e)=>setMain(data[get(e.name)])}
+        handleClickArg={{name:item.tran}
         }
       />
     ); 
@@ -39,16 +51,19 @@ function View({ View }) {
     return (
       <Pannellum.Hotspot
         type="info"
-        pitch={item.x}
-        yaw={item.y}
+        pitch={item.y}
+        yaw={item.x}
         text={item.text}
         URL={item.link}
       />
     );
   }
-  const FILE_RETRIVE_ENDPOINT = "http://localhost:8019/get/content/";
   function processMappings(mappings) {
-    console.log(mappings);
+    console.log("mappings",mappings);
+    if(mappings==undefined) {
+      console.log("Returnning ");
+      return [];
+    }
     return mappings.flatMap((item) => (item.type=="transition" ? processTransition(item): createInfo(item)));
   }
   function getPanellum(type, link, contentID, mappings) {
@@ -60,7 +75,6 @@ function View({ View }) {
           pitch={30}
           yaw={180}
           hfov={110}
-          autoLoad
         >
           {processMappings(mappings)}
         </Pannellum>
@@ -68,7 +82,23 @@ function View({ View }) {
       return <>{panel}</>;
     
   }
-  
+  function findIdx(data,name){
+      for (let index = 0; index < data.length; index++) {
+        const element = data[index];
+        if(name===element.contentID) return index;
+      }
+      return null;
+  }
+  function handleTransition(name){
+    console.log("clicked",k)
+    console.log("name",data.find((e)=>e.contentID=={name}));
+    if(k==0){
+      setK(10);
+      // setMain(data[findIdx(data,name)]);
+    }else{
+      setK(k-1);
+    }
+  }
   return <>{disMain}</>;
 }
 export default View;
